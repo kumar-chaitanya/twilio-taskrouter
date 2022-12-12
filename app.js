@@ -14,27 +14,6 @@ app.use(BodyParser.json({
 app.use(BodyParser.urlencoded({
     extended: false
 }));
-// const twilioCTI = require("./twilio-cti");
-// var TWILIO_WORKSPACE_ID = process.env.TWILIO_WORKSPACE_ID;
-// let __twilioCTI = new twilioCTI();
-// // __twilioCTI.initClient();
-// var WORKSPACE_NAME = 'TaskRouter Node Workspace';
-// //__twilioCTI.createWorkspace();
-// (async () => {
-//     let isWorkSpacePresent = await __twilioCTI.initClient(TWILIO_WORKSPACE_ID);
-//     if (!isWorkSpacePresent) {
-//         __twilioCTI.createWorkspace(WORKSPACE_NAME);
-//     } else {
-
-//     }
-// })();
-
-
-
-
-
-
-
 
 // POST /call/incoming
 router.post('/incoming/', function (req, res) {
@@ -111,27 +90,31 @@ router.get("/tasks", function (req, res) {
     client.taskrouter.v1.workspaces('WSc3a0654d628b9b36b6effff13486b330')
         .tasks
         .list({
-            limit: 20
+            limit: 20,
+            // assignment_status: ["canceled"]
         })
         .then(tasks => res.status(200).json({ tasks: tasks }));
-    // .then(workers => res.status(200).json({ taskQueues: workers }));
 });
 
-// router.get("/tasks", function (req, res) {
-//     client.taskrouter.v1.workspaces('WSc3a0654d628b9b36b6effff13486b330')
-//     .tasks()
-//     .fetch()
-//     .then(task => console.log(task.taskQueueFriendlyName))
-//     .catch(ex => console.log(ex));
-// });
+router.get("/getFlow/:flowId", function (req, res) {
 
-// router.get("/taskChannels", function (req, res) {
-//     client.taskrouter.v1.workspaces('WSc3a0654d628b9b36b6effff13486b330')
-//     .taskChannels()
-//     .fetch()
-//     .then(task_channel => console.log(task_channel.friendlyName))
-//     .catch(ex => console.log(ex));
-// });
+    client.studio.v2
+        .flows(req.params.flowId)      
+        .fetch()  
+        .then(flows => res.status(200).json({ flows: flows }));
+    // https://studio.twilio.com/v2/Flows
+});
+router.get("/getFlows", function (req, res) {
+
+    client.studio.v2
+        .flows
+        .list({
+            limit: 20,
+            // assignment_status: ["canceled"]
+        })
+        .then(flows => res.status(200).json({ flows: flows }));
+    // https://studio.twilio.com/v2/Flows
+});
 
 
 // POST /call/assignment
