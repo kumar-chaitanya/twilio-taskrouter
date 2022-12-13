@@ -64,6 +64,12 @@ router.post("/holdCall", function (req, res) {
     res.status(200);
 });
 
+router.post("/allCallBacks", function (req, res) {
+    fs.appendFileSync('callback.txt', `Callback ${JSON.stringify(req.body)}\n`);
+    console.log((req.body));
+    res.status(200);
+});
+
 router.get("/taskQueues", function (req, res) {
 
     client.taskrouter.v1.workspaces('WSc3a0654d628b9b36b6effff13486b330')
