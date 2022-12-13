@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worker</title>
+</head>
+
+<body>
+    <h4 id="current">Current Worker: </h4>
+    <br>
+    <h4 id="status">Current Status: Offline</h4>
+    <br>
+    <div>
+        <label for="worker-name">Worker Name</label>
+        <input type="text" id="worker-name">
+        <button id="get-worker">Get Worker</button>
+        <button id="create">Create Worker</button>
+    </div>
+
+    <button id="worker-token">Get Worker Token</button>
+    <button id="offline">Go Offline</button>
+    <button id="online">Go Online</button>
+</body>
+<script src="./twilio.min.js"></script>
+<script src="https://sdk.twilio.com/js/taskrouter/v1.21/taskrouter.min.js"
+    integrity="sha384-5fq+0qjayReAreRyHy38VpD3Gr9R2OYIzonwIkoGI4M9dhfKW6RWeRnZjfwSrpN8"
+    crossorigin="anonymous"></script>
+<script src="/js/worker.js"></script>
+</html>
