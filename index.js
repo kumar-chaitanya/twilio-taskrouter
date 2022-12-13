@@ -115,7 +115,11 @@ app.post('/token', (req, res) => {
 
     res.status(200).json({ token: accessToken.toJwt() });
 });
-
+router.post("/holdCall", function (req, res) {
+    fs.appendFileSync('log.txt', `Holding Call with assigned worker ${JSON.stringify(req.body)}\n`);
+    console.log((req.body));
+    res.status(200);
+});
 app.get('/worker', (req, res) => {
     twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
         .workers
@@ -172,12 +176,12 @@ app.post("/worker-token", (req, res) => {
         // Workspace fetch Policy
         buildWorkspacePolicy(),
         // Workspace subresources fetch Policy
-        buildWorkspacePolicy({ resources: ['**'] }),
+        buildWorkspacePolicy({ resources: ['**'], method: 'POST' }),
         // Workspace Activities Update Policy
         buildWorkspacePolicy({ resources: ['Activities'], method: 'POST' }),
         // Workspace Activities Worker Reserations Policy
         buildWorkspacePolicy({ resources: ['Workers', req.body.workerId, 'Reservations', '**'], method: 'POST' }),
-        buildWorkspacePolicy({ resources: ['Tasks', '*', 'Reservations', "*"], method: 'POST' })
+        buildWorkspacePolicy({ resources: ['Tasks', '**', 'Reservations', "**"], method: 'POST' })
 
 
     ];
