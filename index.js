@@ -27,9 +27,9 @@ app.use(Cors({
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 const activities = {
-    "Offline": "WA352e959e389ac80c057748bc8661e7c5",
-    "Available": "WAf7e118ae4296aa4c958fffd65d51e462",
-    "Unavailable": "WAa912cd188d5486f3bd5dd391c8cb69f0",
+    "Offline": "WA520590de6681ddef0f370997a0562f9b",
+    "Available": "WA1b2f786cf7dff20fea4e23af1e08b8df",
+    "Unavailable": "WA681977fa391bd637a13d3ae805461d19",
     "OnCall": "WA3059b94e426e71b98f2b49e00c29ab6e"
 };
 
@@ -67,7 +67,7 @@ router.post('/enqueue/', function (req, res) {
     var twimlResponse = new VoiceResponse();
     var selectedProduct = (pressedKey === '1') ? 'support' : 'payment';
     var enqueue = twimlResponse.enqueue(
-        { workflowSid: (pressedKey === '1') ? process.env.WORK_FLOW_ID : "WW1105a486b5cf6d2fc86f79430ce3f348" }
+        { workflowSid: (pressedKey === '1') ? process.env.WORK_FLOW_ID : process.env.WORK_FLOW_ID_2 }
     );
     fs.appendFileSync('log.txt', `Assiging to workFlowTask ${process.env.WORK_FLOW_ID}\n`);
     enqueue.task({
@@ -83,9 +83,55 @@ router.post('/enqueue/', function (req, res) {
 });
 router.post("/allCallBacks", function (req, res) {
     fs.appendFileSync('callback.txt', `Callback ${JSON.stringify(req.body)}\n`);
+
+    // if (req.body.EventType === "task.created") {
+    //     let taskAttributes = JSON.parse(req.body.TaskAttributes);
+    //     taskAttributes.selectedWorker = ["WKc724d45be7f5d10242ac4d0bb923a0e3"];
+    //     twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+    //         .tasks(req.body.TaskSid)
+    //         .update({
+    //             attributes: JSON.stringify(taskAttributes)
+    //         });
+    // }
+    res.status(200);
     // console.log((req.body));
+
+});
+
+app.get('/pending-tasks', (req, res) => {
+    twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+        .tasks
+        .list({
+            assignmentStatus: "pending",
+            limit: 20
+        })
+        .then(tasks => res.status(200).json(tasks))
+        .catch(ex => {
+            console.log(ex);
+            res.status(500);
+        });
+});
+
+app.post("/pick-call", (req, res) => {
+    if (req.body.taskId && req.body.workerId) {
+        twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+            .tasks(req.body.taskId)
+            .fetch()
+            .then(task => {
+                let taskAttributes = JSON.parse(task.attributes);
+                taskAttributes.selectedWorker = [];
+                taskAttributes.selectedWorker.push(req.body.workerId);
+                twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+                    .tasks(req.body.taskId)
+                    .update({
+                        attributes: JSON.stringify(taskAttributes)
+                    });
+            })
+
+    }
     res.status(200);
 });
+
 app.post('/voice', twilio.webhook({ validate: false }), function (req, res) {
     var phoneNumber = req.body.phoneNumber;
     var callerId = process.env.TWILIO_NUMBER;
@@ -176,6 +222,7 @@ app.post("/worker-token", (req, res) => {
         // Workspace fetch Policy
         buildWorkspacePolicy(),
         // Workspace subresources fetch Policy
+        buildWorkspacePolicy({ resources: ['**'] }),
         buildWorkspacePolicy({ resources: ['**'], method: 'POST' }),
         // Workspace Activities Update Policy
         buildWorkspacePolicy({ resources: ['Activities'], method: 'POST' }),

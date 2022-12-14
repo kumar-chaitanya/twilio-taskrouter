@@ -6,6 +6,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const getWorkerBtn = document.getElementById("get-worker");
     const statusHeader = document.getElementById("status");
     const currentWorker = document.getElementById("current");
+    const getTasksBtn = document.getElementById("pending");
+    const taskList = document.getElementById("tasks");
 
     const twilioResourceDetails = {
         device: undefined,
@@ -13,6 +15,38 @@ document.addEventListener("DOMContentLoaded", () => {
         workerId: undefined,
         clientName: undefined
     };
+
+    function pullCall(event) {
+        fetch('/pick-call', {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                taskId: event.srcElement.previousSibling.textContent,
+                workerId: twilioResourceDetails.workerId
+            })
+        });
+    }
+
+    getTasksBtn.addEventListener("click", () => {
+        fetch('/pending-tasks')
+            .then(res => res.json())
+            .then(data => {
+                taskList.innerHTML = "";
+                data.forEach(task => {
+                    let li = document.createElement('li');
+                    let btn = document.createElement('button');
+                    btn.innerText = 'Pick this call';
+                    btn.addEventListener("click", pullCall);
+                    let textNode = document.createTextNode(task.sid);
+                    li.append(textNode);
+                    li.appendChild(btn);
+                    taskList.appendChild(li);
+                });
+            })
+            .catch(ex => console.log(ex));
+    });
 
     getWorkerBtn.addEventListener("click", () => {
         let workerName = document.getElementById("worker-name");
