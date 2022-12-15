@@ -53,7 +53,7 @@ router.post('/incoming/', function (req, res) {
         action: '/enqueue/',
         method: 'POST'
     });
-    gather.say('For Support, press one. For Payment, press any other key.');
+    gather.say('For Support, press one. For Helpdesk, press any other key.');
     res.type('text/xml');
     // console.log(twimlResponse.toString());
     res.send(twimlResponse.toString());
@@ -65,22 +65,21 @@ router.post('/enqueue/', function (req, res) {
     fs.appendFileSync('log.txt', `Digit Pressed ${req.body.Digits}\n`);
     var pressedKey = req.body.Digits;
     var twimlResponse = new VoiceResponse();
-    var selectedProduct = (pressedKey === '1') ? 'support' : 'payment';
+    var selectedProduct = (pressedKey === '1') ? 'support' : 'helpdesk';
     var enqueue = twimlResponse.enqueue(
-        { workflowSid: (pressedKey === '1') ? process.env.WORK_FLOW_ID : process.env.WORK_FLOW_ID_2 }
+        { workflowSid: process.env.WORK_FLOW_ID }
     );
     fs.appendFileSync('log.txt', `Assiging to workFlowTask ${process.env.WORK_FLOW_ID}\n`);
     enqueue.task({
-        priority: (pressedKey === '1') ? 5 : 1,
-        timeout: 500
+        priority: 1,
+        timeout: 50
     }, JSON.stringify({ selected_product: selectedProduct }));
 
     res.setHeader('Content-Type', 'application/xml');
     res.write(enqueue.toString());
     res.end();
-    // res.type('text/xml');
-    // res.send(twimlResponse.toString());
 });
+
 router.post("/allCallBacks", function (req, res) {
     fs.appendFileSync('callback.txt', `Callback ${JSON.stringify(req.body)}\n`);
 
