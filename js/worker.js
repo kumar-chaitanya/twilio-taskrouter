@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 data.forEach(task => {
                     let li = document.createElement('li');
                     let btn = document.createElement('button');
-                    btn.innerText = 'Pick this call';
+                    btn.innerText = 'Reserve this call';
                     btn.addEventListener("click", pullCall);
                     let textNode = document.createTextNode(task.sid);
                     li.append(textNode);
@@ -197,7 +197,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         worker.on("reservation.created", (reservation) => {
-            reservation.dequeue();
-        })
+            setTimeout(() => {
+                reservation.dequeue();
+            }, 10000);
+        });
+
+        worker.on("reservation.wrapup", function (reservation) {
+            worker.completeTask(reservation.task.sid);
+        });
     };
 });
