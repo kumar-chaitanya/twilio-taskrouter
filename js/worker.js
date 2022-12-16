@@ -16,6 +16,16 @@ document.addEventListener("DOMContentLoaded", () => {
         clientName: undefined
     };
 
+    function updateHoldStatus(conferenceId, callerId, hold) {
+        fetch('/hold-status', {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ conferenceId, callerId, hold })
+        });
+    }
+
     function pullCall(event) {
         fetch('/pick-call', {
             method: "POST",
@@ -196,10 +206,45 @@ document.addEventListener("DOMContentLoaded", () => {
             statusHeader.innerText = `Current Status: ${worker.activityName}`;
         });
 
+        worker.on("reservation.accepted", (reservation) => {
+            console.log(reservation);
+            let currentCall = document.getElementById("in-call");
+            currentCall.innerHTML = "";
+
+            let holdCallBtn = document.createElement("button");
+            holdCallBtn.innerText = "Hold Call";
+            holdCallBtn.addEventListener("click", function () {
+                updateHoldStatus(reservation.task.attributes.conference.sid,
+                    reservation.task.attributes.conference.participants.customer, true);
+            });
+
+            let unholdCallBtn = document.createElement("button");
+            unholdCallBtn.innerText = "Unhold Call";
+            unholdCallBtn.addEventListener("click", function () {
+                updateHoldStatus(reservation.task.attributes.conference.sid,
+                    reservation.task.attributes.conference.participants.customer, false);
+            });
+
+            let textNode = document.createTextNode(`In call with ${reservation.task.attributes.caller}`);
+
+            currentCall.appendChild(textNode);
+            currentCall.appendChild(holdCallBtn);
+            currentCall.appendChild(unholdCallBtn);
+        });
+
         worker.on("reservation.created", (reservation) => {
             setTimeout(() => {
-                reservation.dequeue();
-            }, 10000);
+                const options = {
+                    "ConferenceStatusCallback": "https://bd3a-49-249-16-218.in.ngrok.io/allCallBacks",
+                    "ConferenceStatusCallbackEvent": "start,end,join,leave",
+                    "EndConferenceOnExit": "true",
+                    "EndConferenceOnCustomerExit": "true"
+                };
+
+                reservation.conference(null, null, null, null, function (error, reservation) {
+                    console.log(error);
+                }, options);
+            }, 2000);
         });
 
         worker.on("reservation.wrapup", function (reservation) {
