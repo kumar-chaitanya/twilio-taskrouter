@@ -261,6 +261,13 @@ app.get('/js/:filename', (req, res) => {
     res.sendFile(path.join(__dirname, `/js/${req.params.filename}`));
 });
 
+app.post('/hold-status', (req, res) => {
+    twilioClient.conferences(req.body.conferenceId)
+        .participants(req.body.callerId)
+        .update({ hold: req.body.hold });
+    res.status(200);
+});
+
 app.listen(3000, () => {
     console.log('Listening on 3000');
 });
