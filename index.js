@@ -72,7 +72,7 @@ router.post('/enqueue/', function (req, res) {
     fs.appendFileSync('log.txt', `Assiging to workFlowTask ${process.env.WORK_FLOW_ID}\n`);
     enqueue.task({
         priority: 1,
-        timeout: 50
+        timeout: 500
     }, JSON.stringify({ selected_product: selectedProduct }));
 
     res.setHeader('Content-Type', 'application/xml');
@@ -92,7 +92,7 @@ router.post("/allCallBacks", function (req, res) {
     //             attributes: JSON.stringify(taskAttributes)
     //         });
     // }
-    res.status(200);
+    res.status(200).send(' ');
     // console.log((req.body));
 
 });
@@ -128,7 +128,7 @@ app.post("/pick-call", (req, res) => {
             })
 
     }
-    res.status(200);
+    res.status(200).send('');
 });
 
 app.post('/voice', twilio.webhook({ validate: false }), function (req, res) {
@@ -163,7 +163,7 @@ app.post('/token', (req, res) => {
 router.post("/holdCall", function (req, res) {
     fs.appendFileSync('log.txt', `Holding Call with assigned worker ${JSON.stringify(req.body)}\n`);
     console.log((req.body));
-    res.status(200);
+    res.status(200).send('');
 });
 app.get('/worker', (req, res) => {
     twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
@@ -265,7 +265,58 @@ app.post('/hold-status', (req, res) => {
     twilioClient.conferences(req.body.conferenceId)
         .participants(req.body.callerId)
         .update({ hold: req.body.hold });
-    res.status(200);
+    res.status(200).send('');
+});
+
+app.post('/transfer-call', (req, res) => {
+    /* Worker Id to transfer call to */
+    const workerId = "WKc724d45be7f5d10242ac4d0bb923a0e3";
+
+    /* Put the customer on hold */
+    // twilioClient.conferences(req.body.conferenceId)
+    //     .participants(req.body.callerId)
+    //     .update({ hold: true });
+
+    /* Fetch old task */
+    twilioClient.taskrouter
+        .workspaces(process.env.TWILIO_WORKSPACE_ID)
+        .tasks(req.body.taskId)
+        .fetch()
+        .then(function (task) {
+            /* Create new task */
+            let taskAttributes = JSON.parse(task.attributes);
+            taskAttributes.selectedWorker = [workerId];
+            taskAttributes.conference.room_name = req.body.taskId;
+            twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+                .tasks
+                .create({
+                    attributes: JSON.stringify(taskAttributes),
+                    workflowSid: process.env.WORK_FLOW_ID,
+                    priority: 1,
+                    timeout: 500,
+                    taskChannel: "voice"
+                })
+                .then(function () {
+                    /* Remove current worker from conference */
+                    twilioClient.conferences(taskAttributes.conference.sid)
+                        .participants(taskAttributes.conference.participants.worker)
+                        .remove();
+                });
+        })
+        .catch(function (ex) {
+            console.log(ex);
+            res.send('');
+        });
+
+        res.status(200).send(' ');
+});
+
+app.post('/call-answer/:conferenceRoomName', (req, res) => {
+    var twiml = new VoiceResponse();
+    const dial = twiml.dial();
+    dial.conference(req.params.conferenceRoomName);
+    console.log(twiml.toString());
+    res.status(200).send(twiml.toString());
 });
 
 app.listen(3000, () => {
