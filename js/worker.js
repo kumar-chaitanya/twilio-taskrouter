@@ -16,6 +16,16 @@ document.addEventListener("DOMContentLoaded", () => {
         clientName: undefined
     };
 
+    function transferCall(conferenceId, taskId, callerId, calledId) {
+        fetch('/transfer-call', {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ conferenceId, taskId, callerId, calledId })
+        });
+    }
+
     function updateHoldStatus(conferenceId, callerId, hold) {
         fetch('/hold-status', {
             method: "POST",
@@ -225,26 +235,51 @@ document.addEventListener("DOMContentLoaded", () => {
                     reservation.task.attributes.conference.participants.customer, false);
             });
 
+            let transferCallBtn = document.createElement("button");
+            transferCallBtn.innerText = "Transfer Call";
+            transferCallBtn.addEventListener("click", function () {
+                transferCall(reservation.task.attributes.conference.sid,
+                    reservation.task.sid,
+                    reservation.task.attributes.conference.participants.customer,
+                    reservation.task.attributes.conference.participants.worker);
+            });
+
             let textNode = document.createTextNode(`In call with ${reservation.task.attributes.caller}`);
 
             currentCall.appendChild(textNode);
             currentCall.appendChild(holdCallBtn);
             currentCall.appendChild(unholdCallBtn);
+            currentCall.appendChild(transferCallBtn);
         });
 
         worker.on("reservation.created", (reservation) => {
-            setTimeout(() => {
-                const options = {
-                    "ConferenceStatusCallback": "https://bd3a-49-249-16-218.in.ngrok.io/allCallBacks",
-                    "ConferenceStatusCallbackEvent": "start,end,join,leave",
-                    "EndConferenceOnExit": "true",
-                    "EndConferenceOnCustomerExit": "true"
-                };
+            if (!reservation.task.attributes.conference) {
+                setTimeout(() => {
+                    const options = {
+                        "ConferenceStatusCallback": "https://78ba-49-249-16-218.in.ngrok.io/allCallBacks",
+                        "ConferenceStatusCallbackEvent": "start,end,join,leave",
+                        "EndConferenceOnExit": "false",
+                        "EndConferenceOnCustomerExit": "true"
+                    };
 
-                reservation.conference(null, null, null, null, function (error, reservation) {
-                    console.log(error);
-                }, options);
-            }, 2000);
+                    reservation.conference(null, null, null, null, function (error, reservation) {
+                        console.log(error);
+                    }, options);
+                }, 2000);
+            } else {
+                reservation.call(
+                    null,
+                    `https://78ba-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
+                    null,
+                    "true",
+                    null,
+                    `client:${twilioResourceDetails.clientName}`,
+                    function (error, reservation) {
+                        console.log(error);
+                        console.log(reservation);
+                    }
+                );
+            }
         });
 
         worker.on("reservation.wrapup", function (reservation) {
