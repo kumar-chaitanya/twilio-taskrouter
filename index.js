@@ -81,6 +81,27 @@ router.post('/enqueue/', function (req, res) {
 });
 
 router.post("/allCallBacks", function (req, res) {
+    /** Handle task cleanup when the conference ends,
+     * so all the tasks related to conference are completed and workers are available */
+    if (req.body.StatusCallbackEvent && req.body.StatusCallbackEvent === "conference-end" && req.body.ConferenceSid) {
+        twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+            .tasks
+            .list({
+                assignmentStatus: ["assigned"],
+                evaluateTaskAttributes: `conference.sid == "${req.body.ConferenceSid}"`,
+            })
+            .then(tasks => {
+                tasks.forEach(task => {
+                    twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+                        .tasks(task.sid)
+                        .update({
+                            assignmentStatus: 'wrapping',
+                            reason: 'conference ended',
+                        });
+                });
+            });
+    }
+
     fs.appendFileSync('callback.txt', `Callback ${JSON.stringify(req.body)}\n`);
 
     // if (req.body.EventType === "task.created") {
@@ -337,11 +358,11 @@ app.post('/hang-call', (req, res) => {
         .remove();
 
     twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
-    .tasks(req.body.taskId)
-    .update({
-        assignmentStatus: 'wrapping',
-        reason: 'call hang up',
-    });
+        .tasks(req.body.taskId)
+        .update({
+            assignmentStatus: 'wrapping',
+            reason: 'call hang up',
+        });
     res.status(200).send('');
 });
 
