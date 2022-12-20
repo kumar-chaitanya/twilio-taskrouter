@@ -308,7 +308,14 @@ app.post('/transfer-call', (req, res) => {
             res.send('');
         });
 
-        res.status(200).send(' ');
+    res.status(200).send(' ');
+});
+
+app.post('/hang-call', (req, res) => {
+    twilioClient.conferences(req.body.conferenceId)
+        .participants(req.body.callerId)
+        .remove();
+    res.status(200).send('');
 });
 
 app.post('/call-answer/:conferenceRoomName', (req, res) => {
