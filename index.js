@@ -111,6 +111,7 @@ app.get('/pending-tasks', (req, res) => {
         });
 });
 
+/* Explaination: https://stackoverflow.com/questions/38356604/how-to-not-offer-a-task-to-specific-worker-on-twilio */
 app.post("/pick-call", (req, res) => {
     if (req.body.taskId && req.body.workerId) {
         twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
@@ -261,12 +262,16 @@ app.get('/js/:filename', (req, res) => {
     res.sendFile(path.join(__dirname, `/js/${req.params.filename}`));
 });
 
+/* Explaination here: https://www.twilio.com/docs/taskrouter/contact-center-blueprint/call-control-concepts#putting-a-call-on-hold */
 app.post('/hold-status', (req, res) => {
     twilioClient.conferences(req.body.conferenceId)
         .participants(req.body.callerId)
         .update({ hold: req.body.hold });
     res.status(200).send('');
 });
+
+/* Explaination here: https://github.com/vernig/twilio-taskrouter-agent-frontend */
+
 
 app.post('/transfer-call', (req, res) => {
     /* Worker Id to transfer call to */
@@ -318,6 +323,14 @@ app.post('/transfer-call', (req, res) => {
     res.status(200).send(' ');
 });
 
+app.post('/call-answer/:conferenceRoomName', (req, res) => {
+    var twiml = new VoiceResponse();
+    const dial = twiml.dial();
+    dial.conference(req.params.conferenceRoomName);
+    console.log(twiml.toString());
+    res.status(200).send(twiml.toString());
+});
+
 app.post('/hang-call', (req, res) => {
     twilioClient.conferences(req.body.conferenceId)
         .participants(req.body.callerId)
@@ -332,13 +345,6 @@ app.post('/hang-call', (req, res) => {
     res.status(200).send('');
 });
 
-app.post('/call-answer/:conferenceRoomName', (req, res) => {
-    var twiml = new VoiceResponse();
-    const dial = twiml.dial();
-    dial.conference(req.params.conferenceRoomName);
-    console.log(twiml.toString());
-    res.status(200).send(twiml.toString());
-});
 
 app.listen(3000, () => {
     console.log('Listening on 3000');
