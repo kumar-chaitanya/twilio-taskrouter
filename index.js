@@ -301,6 +301,13 @@ app.post('/transfer-call', (req, res) => {
                     twilioClient.conferences(taskAttributes.conference.sid)
                         .participants(taskAttributes.conference.participants.worker)
                         .remove();
+
+                    twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+                        .tasks(req.body.taskId)
+                        .update({
+                            assignmentStatus: 'wrapping',
+                            reason: 'call transferred',
+                        });
                 });
         })
         .catch(function (ex) {
@@ -315,6 +322,13 @@ app.post('/hang-call', (req, res) => {
     twilioClient.conferences(req.body.conferenceId)
         .participants(req.body.callerId)
         .remove();
+
+    twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+    .tasks(req.body.taskId)
+    .update({
+        assignmentStatus: 'wrapping',
+        reason: 'call hang up',
+    });
     res.status(200).send('');
 });
 

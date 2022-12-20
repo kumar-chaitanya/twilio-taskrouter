@@ -49,13 +49,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function hangCall(conferenceId, callerId) {
+    function hangCall(conferenceId, callerId, taskId) {
         fetch('/hang-call', {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ conferenceId, callerId })
+            body: JSON.stringify({ conferenceId, callerId, taskId })
         });
     }
 
@@ -262,7 +262,8 @@ document.addEventListener("DOMContentLoaded", () => {
             hangCallBtn.innerText = "Hang Up Call";
             hangCallBtn.addEventListener("click", function () {
                 hangCall(reservation.task.attributes.conference.sid,
-                    reservation.task.attributes.conference.participants.customer);
+                    reservation.task.attributes.conference.participants.customer,
+                    reservation.task.sid);
             });
 
 
