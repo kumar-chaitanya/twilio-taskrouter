@@ -16,13 +16,13 @@ document.addEventListener("DOMContentLoaded", () => {
         clientName: undefined
     };
 
-    function transferCall(conferenceId, taskId, callerId, calledId) {
+    function transferCall(taskId) {
         fetch('/transfer-call', {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ conferenceId, taskId, callerId, calledId })
+            body: JSON.stringify({ taskId })
         });
     }
 
@@ -49,6 +49,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function hangCall(conferenceId, callerId) {
+        fetch('/hang-call', {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ conferenceId, callerId })
+        });
+    }
+
     getTasksBtn.addEventListener("click", () => {
         fetch('/pending-tasks')
             .then(res => res.json())
@@ -56,7 +66,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 taskList.innerHTML = "";
                 data.forEach(task => {
                     let li = document.createElement('li');
+                    li.classList.add("list-group-item");
                     let btn = document.createElement('button');
+                    btn.classList.add("btn", "btn-sm", "btn-success", "ms-3");
                     btn.innerText = 'Reserve this call';
                     btn.addEventListener("click", pullCall);
                     let textNode = document.createTextNode(task.sid);
@@ -79,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     twilioResourceDetails.clientName = workerName.value;
 
                     currentWorker.innerText = `Current Worker: ${twilioResourceDetails.clientName}`;
+                    workerName.value = "";
                 })
                 .catch(ex => console.log(ex));
         }
@@ -222,6 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
             currentCall.innerHTML = "";
 
             let holdCallBtn = document.createElement("button");
+            holdCallBtn.classList.add("btn", "btn-sm", "ms-3", "btn-info");
             holdCallBtn.innerText = "Hold Call";
             holdCallBtn.addEventListener("click", function () {
                 updateHoldStatus(reservation.task.attributes.conference.sid,
@@ -229,6 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             let unholdCallBtn = document.createElement("button");
+            unholdCallBtn.classList.add("btn", "btn-sm", "ms-3", "btn-info");
             unholdCallBtn.innerText = "Unhold Call";
             unholdCallBtn.addEventListener("click", function () {
                 updateHoldStatus(reservation.task.attributes.conference.sid,
@@ -236,13 +251,21 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             let transferCallBtn = document.createElement("button");
+            transferCallBtn.classList.add("btn", "btn-sm", "ms-3", "btn-warning");
             transferCallBtn.innerText = "Transfer Call";
             transferCallBtn.addEventListener("click", function () {
-                transferCall(reservation.task.attributes.conference.sid,
-                    reservation.task.sid,
-                    reservation.task.attributes.conference.participants.customer,
-                    reservation.task.attributes.conference.participants.worker);
+                transferCall(reservation.task.sid);
             });
+
+            let hangCallBtn = document.createElement("button");
+            hangCallBtn.classList.add("btn", "btn-sm", "ms-3", "btn-danger");
+            hangCallBtn.innerText = "Hang Up Call";
+            hangCallBtn.addEventListener("click", function () {
+                hangCall(reservation.task.attributes.conference.sid,
+                    reservation.task.attributes.conference.participants.customer);
+            });
+
+
 
             let textNode = document.createTextNode(`In call with ${reservation.task.attributes.caller}`);
 
@@ -250,13 +273,14 @@ document.addEventListener("DOMContentLoaded", () => {
             currentCall.appendChild(holdCallBtn);
             currentCall.appendChild(unholdCallBtn);
             currentCall.appendChild(transferCallBtn);
+            currentCall.appendChild(hangCallBtn);
         });
 
         worker.on("reservation.created", (reservation) => {
             if (!reservation.task.attributes.conference) {
                 setTimeout(() => {
                     const options = {
-                        "ConferenceStatusCallback": "https://78ba-49-249-16-218.in.ngrok.io/allCallBacks",
+                        "ConferenceStatusCallback": "https://656b-49-249-16-218.in.ngrok.io/allCallBacks",
                         "ConferenceStatusCallbackEvent": "start,end,join,leave",
                         "EndConferenceOnExit": "false",
                         "EndConferenceOnCustomerExit": "true"
@@ -269,20 +293,17 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 reservation.call(
                     null,
-                    `https://78ba-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
+                    `https://656b-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
                     null,
                     "true",
-                    null,
-                    `client:${twilioResourceDetails.clientName}`,
-                    function (error, reservation) {
-                        console.log(error);
-                        console.log(reservation);
-                    }
+                    null
                 );
             }
         });
 
         worker.on("reservation.wrapup", function (reservation) {
+            let currentCall = document.getElementById("in-call");
+            currentCall.innerHTML = "";
             worker.completeTask(reservation.task.sid);
         });
     };

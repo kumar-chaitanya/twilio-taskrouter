@@ -6,36 +6,46 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Worker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 </head>
 
 <body>
-    <h4 id="current">Current Worker: </h4>
-    <br>
-    <h4 id="status">Current Status: Offline</h4>
-    <br>
-    <div>
-        <label for="worker-name">Worker Name</label>
-        <input type="text" id="worker-name">
-        <button id="get-worker">Get Worker</button>
-        <button id="create">Create Worker</button>
+    <div class="container mt-5">
+        <h5 id="current">Current Worker: </h5>
+        <h5 id="status">Current Status: Offline</h5>
+        <div class="mt-3">
+            <label class="form-label" for="worker-name">Worker Name</label>
+            <input class="form-control w-25" type="text" id="worker-name">
+
+        </div>
+        <br>
+        <div class="btn-group mt-3">
+            <button type="button" class="btn btn-secondary btn-sm me-2" id="get-worker">Get Worker</button>
+            <button type="button" class="btn btn-secondary btn-sm me-2" id="worker-token">Get Worker Token</button>
+            <button disabled="true" type="button" class="btn btn-secondary btn-sm me-2" id="create">Create Worker</button>
+        </div>
+        <br>
+        <div class="btn-group mt-3">
+            <button type="button" class="btn btn-sm btn-light me-2" id="offline">Go Offline</button>
+            <button type="button" class="btn btn-sm btn-success me-2" id="online">Go Online</button>
+        </div>
+        <br>
+        <div class="btn-group mt-3">
+            <button type="button" class="btn btn-sm btn-info" id="pending">Get Pending Tasks</button>
+        </div>
+        <br>
+        <ul id="tasks" class="list-group mt-3"></ul>
+        <br>
+        <br>
+        <br>
+        <div id="in-call"></div>
     </div>
-
-    <button id="worker-token">Get Worker Token</button>
-    <button id="offline">Go Offline</button>
-    <button id="online">Go Online</button>
-
-    <br>
-    <button id="pending">Get Pending Tasks</button>
-    <br>
-    <ul id="tasks"></ul>
-    <br>
-    <br>
-    <br>
-    <p id="in-call"></p>
 </body>
 <script src="/js/twilio.min.js"></script>
 <script src="https://sdk.twilio.com/js/taskrouter/v1.21/taskrouter.min.js"
     integrity="sha384-5fq+0qjayReAreRyHy38VpD3Gr9R2OYIzonwIkoGI4M9dhfKW6RWeRnZjfwSrpN8"
     crossorigin="anonymous"></script>
 <script src="/js/worker.js"></script>
+
 </html>
