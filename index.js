@@ -195,6 +195,7 @@ app.get('/worker', (req, res) => {
         })
         .then(workers => {
             if (workers && workers[0]) {
+                console.log(workers);
                 res.status(200).json({ workerId: workers[0].sid });
             }
 
@@ -365,6 +366,80 @@ app.post('/hang-call', (req, res) => {
         });
     res.status(200).send('');
 });
+
+app.get("/task-queues", (req, res) => {
+    twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+    .taskQueues
+    .list({
+        limit: 10
+    })
+    .then(taskQueues => {
+        let taskQueueArray = [];
+        for(let i=0; i<taskQueues.length; i++){
+            taskQueueArray.push({sid: taskQueues[i].sid, taskQueueName: taskQueues[i].friendlyName})
+        }
+        res.send(taskQueueArray);
+    })
+});
+
+/*
+Worker Statistics
+*/
+app.get('/worker-statistics/all', (req, res) => {
+    twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+    .workers
+    .statistics()
+    .fetch({
+        minutes: 480,
+        endDate:""
+    })
+    .then(workers_statistics => {
+        res.status(200).send(workers_statistics)
+    });
+});
+
+app.get('/worker-statistics', (req, res) => {
+    twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+    .workers(req.query.workerId)
+    .statistics()
+    .fetch({
+        minutes: 480
+    })
+    .then(workers_statistics => {
+        res.status(200).send(workers_statistics)
+    });
+});
+
+app.get('/worker-statistics/cumulative-statistics', (req, res) => {
+    twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+    .workers(req.query.workerId)
+    .cumulativeStatistics()
+    .fetch({
+        minutes: 480
+    })
+    .then(workers_statistics => {
+        res.status(200).send(workers_statistics)
+    });
+});
+
+app.get('/worker-statistics/realtime-statistics', (req, res) => {
+    twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+    .workers(req.query.workerId)
+    .realTimeStatistics()
+    .fetch({
+        minutes: 480
+    })
+    .then(workers_statistics => {
+        res.status(200).send(workers_statistics)
+    });
+});
+
+
+/*
+Task queue
+*/
+
+
 
 
 app.listen(3000, () => {

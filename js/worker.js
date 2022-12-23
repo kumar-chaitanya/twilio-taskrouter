@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentWorker = document.getElementById("current");
     const getTasksBtn = document.getElementById("pending");
     const taskList = document.getElementById("tasks");
+    const getWorkerStatistics = document.getElementById("get-worker-statistics");
+    const getAllWorkerStatistics = document.getElementById("get-all-worker-statistics");
 
     const twilioResourceDetails = {
         device: undefined,
@@ -58,6 +60,23 @@ document.addEventListener("DOMContentLoaded", () => {
             body: JSON.stringify({ conferenceId, callerId, taskId })
         });
     }
+
+    getAllWorkerStatistics.addEventListener("click", () => {
+        fetch("/worker-statistics/all")
+        .then(res => res.json())
+        .then(data => {
+            //statistics of all workers
+            console.log(data);
+        })
+    })
+
+    getWorkerStatistics.addEventListener("click", () => {
+        fetch(`/worker-statistics?workerId=${twilioResourceDetails.workerId}`)
+        .then(res => res.json())
+        .then(data => {
+            console.log(data);
+        })
+    });
 
     getTasksBtn.addEventListener("click", () => {
         fetch('/pending-tasks')
@@ -281,7 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!reservation.task.attributes.conference) {
                 setTimeout(() => {
                     const options = {
-                        "ConferenceStatusCallback": "https://4c37-2405-201-5803-90dc-47e0-bed1-37c5-d37d.in.ngrok.io/allCallBacks",
+                        "ConferenceStatusCallback": "https://a062-49-249-16-218.in.ngrok.io/allCallBacks",
                         "ConferenceStatusCallbackEvent": "start,end,join,leave",
                         "EndConferenceOnExit": "false",
                         "EndConferenceOnCustomerExit": "true"
@@ -294,7 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 reservation.call(
                     null,
-                    `https://4c37-2405-201-5803-90dc-47e0-bed1-37c5-d37d.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
+                    `https://a062-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
                     null,
                     "true",
                     null
