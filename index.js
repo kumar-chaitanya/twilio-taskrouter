@@ -368,76 +368,231 @@ app.post('/hang-call', (req, res) => {
 });
 
 app.get("/task-queues", (req, res) => {
-    twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
-    .taskQueues
-    .list({
-        limit: 10
-    })
-    .then(taskQueues => {
-        let taskQueueArray = [];
-        for(let i=0; i<taskQueues.length; i++){
-            taskQueueArray.push({sid: taskQueues[i].sid, taskQueueName: taskQueues[i].friendlyName})
-        }
-        res.send(taskQueueArray);
-    })
+    __getTaskQueues()
+        .then(taskQueues => {
+            if (taskQueues) {
+                res.status(200).send(taskQueues);
+                return;
+            }
+            res.status(200).send([]);
+            return;
+        })
+        .catch(ex => {
+            console.log(ex);
+            res.status(500).json(ex);
+        })
 });
+
+function __getTaskQueues() {
+    return new Promise(function (fulfill, reject) {
+        twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+            .taskQueues
+            .list()
+            .then(taskQueues => {
+                let taskQueueArray = [];
+                for (let i = 0; i < taskQueues.length; i++) {
+                    taskQueueArray.push({ sid: taskQueues[i].sid, taskQueueName: taskQueues[i].friendlyName })
+                }
+                fulfill(taskQueueArray);
+                return;
+            })
+            .catch(ex => {
+                console.log(ex);
+                reject(ex);
+                return;
+            })
+    });
+}
+
+function __getWorkflows() {
+    return new Promise(function (fulfill, reject) {
+        twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+            .workflows
+            .list()
+            .then(workflows => {
+                let workflowArray = [];
+                for (let i = 0; i < workflows.length; i++) {
+                    workflowArray.push({ sid: workflows[i].sid, taskQueueName: workflows[i].friendlyName })
+                }
+                fulfill(workflowArray);
+                return;
+            })
+            .catch(ex => {
+                console.log(ex);
+                reject(ex);
+                return;
+            })
+    });
+};
 
 /*
 Worker Statistics
 */
 app.get('/worker-statistics/all', (req, res) => {
     twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
-    .workers
-    .statistics()
-    .fetch({
-        minutes: 480,
-        endDate:""
-    })
-    .then(workers_statistics => {
-        res.status(200).send(workers_statistics)
-    });
+        .workers
+        .statistics()
+        .fetch({
+            minutes: 480,
+            endDate: ""
+        })
+        .then(workers_statistics => {
+            res.status(200).send(workers_statistics)
+        });
 });
 
 app.get('/worker-statistics', (req, res) => {
     twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
-    .workers(req.query.workerId)
-    .statistics()
-    .fetch({
-        minutes: 480
-    })
-    .then(workers_statistics => {
-        res.status(200).send(workers_statistics)
-    });
+        .workers(req.query.workerId)
+        .statistics()
+        .fetch({
+            minutes: 480
+        })
+        .then(workers_statistics => {
+            res.status(200).send(workers_statistics)
+        });
 });
 
 app.get('/worker-statistics/cumulative-statistics', (req, res) => {
     twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
-    .workers(req.query.workerId)
-    .cumulativeStatistics()
-    .fetch({
-        minutes: 480
-    })
-    .then(workers_statistics => {
-        res.status(200).send(workers_statistics)
-    });
+        .workers(req.query.workerId)
+        .cumulativeStatistics()
+        .fetch({
+            minutes: 480
+        })
+        .then(workers_statistics => {
+            res.status(200).send(workers_statistics)
+        });
 });
 
 app.get('/worker-statistics/realtime-statistics', (req, res) => {
     twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
-    .workers(req.query.workerId)
-    .realTimeStatistics()
-    .fetch({
-        minutes: 480
-    })
-    .then(workers_statistics => {
-        res.status(200).send(workers_statistics)
-    });
+        .workers(req.query.workerId)
+        .realTimeStatistics()
+        .fetch({
+            minutes: 480
+        })
+        .then(workers_statistics => {
+            res.status(200).send(workers_statistics)
+        });
 });
 
 
 /*
-Task queue
+statistics
 */
+app.get("/statistics/real-time", (req, res) => {
+    let realTimeStatistics = {
+        workspace: {},
+        workflows: [],
+        taskQueues: [],
+        workers: {}
+    };
+    let clientWorkSpace = twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID);
+    clientWorkSpace
+        .realTimeStatistics()
+        .fetch()
+        .then(workspaceRealTimeStatistics => {
+            if (workspaceRealTimeStatistics) {
+                realTimeStatistics.workspace = workspaceRealTimeStatistics;
+            }
+            res.write(JSON.stringify(realTimeStatistics));
+            return __getWorkflows();
+        })
+        .then(async workflows => {
+            if (workflows && workflows.length > 0) {
+                for (let i = 0; i < workflows.length; i++) {
+                    let realTimeWorkflowData = await clientWorkSpace
+                        .workflows(workflows[i].sid).realTimeStatistics().fetch();
+                    if (realTimeWorkflowData) {
+                        realTimeStatistics.workflows.push(realTimeWorkflowData);
+                    }
+                }
+            }
+            res.write(JSON.stringify(realTimeStatistics));
+            return __getTaskQueues();
+        })
+        .then(async taskQueues => {
+            if (taskQueues && taskQueues.length > 0) {
+                for (let i = 0; i < taskQueues.length; i++) {
+                    let realTimeTaskQueueData = await clientWorkSpace
+                        .taskQueues(taskQueues[i].sid).realTimeStatistics().fetch();
+                    if (realTimeTaskQueueData) {
+                        realTimeStatistics.taskQueues.push(realTimeTaskQueueData);
+                    }
+                }
+            }
+            res.write(JSON.stringify(realTimeStatistics));
+            return clientWorkSpace.workers().realTimeStatistics().fetch();
+        })
+        .then(workersRealTimeStatistics => {
+            if (workersRealTimeStatistics) {
+                realTimeStatistics.workers = workersRealTimeStatistics;
+            }
+            res.write(JSON.stringify(realTimeStatistics));
+            res.end();
+        })
+        .catch(ex => {
+            console.log(ex);
+            res.status(500).json(ex);
+            return;
+        })
+})
+
+app.get("/statistics/cumulative", (req, res) => {
+    let cumulativeStatistics = {
+        workspace: {},
+        workflows: [],
+        taskQueues: [],
+        workers: {}
+    };
+    let clientWorkSpace = twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID);
+    clientWorkSpace
+        .cumulativeStatistics()
+        .fetch()
+        .then(workspaceCumulativeStatistics => {
+            if (workspaceCumulativeStatistics) {
+                cumulativeStatistics.workspace = workspaceCumulativeStatistics;
+            }
+            return __getWorkflows();
+        })
+        .then(async workflows => {
+            if (workflows && workflows.length > 0) {
+                for (let i = 0; i < workflows.length; i++) {
+                    let realTimeWorkflowData = await clientWorkSpace
+                        .workflows(workflows[i].sid).cumulativeStatistics().fetch();
+                    if (realTimeWorkflowData) {
+                        cumulativeStatistics.workflows.push(realTimeWorkflowData);
+                    }
+                }
+            }
+            return __getTaskQueues();
+        })
+        .then(async taskQueues => {
+            if (taskQueues && taskQueues.length > 0) {
+                for (let i = 0; i < taskQueues.length; i++) {
+                    let realTimeTaskQueueData = await clientWorkSpace
+                        .taskQueues(taskQueues[i].sid).cumulativeStatistics().fetch();
+                    if (realTimeTaskQueueData) {
+                        cumulativeStatistics.taskQueues.push(realTimeTaskQueueData);
+                    }
+                }
+            }
+            return clientWorkSpace
+                .workers().cumulativeStatistics().fetch();
+        })
+        .then(workersCumulativeStatistics => {
+            if (workersCumulativeStatistics) {
+                cumulativeStatistics.workers = workersCumulativeStatistics;
+            }
+            res.status(200).send(cumulativeStatistics);
+        })
+        .catch(ex => {
+            console.log(ex);
+            res.status(500).json(ex);
+            return;
+        })
+})
 
 
 

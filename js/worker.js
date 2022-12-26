@@ -300,7 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!reservation.task.attributes.conference) {
                 setTimeout(() => {
                     const options = {
-                        "ConferenceStatusCallback": "https://a062-49-249-16-218.in.ngrok.io/allCallBacks",
+                        "ConferenceStatusCallback": "https://f5f5-49-249-16-218.in.ngrok.io/allCallBacks",
                         "ConferenceStatusCallbackEvent": "start,end,join,leave",
                         "EndConferenceOnExit": "false",
                         "EndConferenceOnCustomerExit": "true"
@@ -313,7 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 reservation.call(
                     null,
-                    `https://a062-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
+                    `https://f5f5-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
                     null,
                     "true",
                     null
