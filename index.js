@@ -486,7 +486,8 @@ app.get("/statistics/real-time", (req, res) => {
         workspace: {},
         workflows: [],
         taskQueues: [],
-        workers: {}
+        workers: {},
+        tasks: []
     };
     let clientWorkSpace = twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID);
     clientWorkSpace
@@ -529,6 +530,15 @@ app.get("/statistics/real-time", (req, res) => {
             if (workersRealTimeStatistics) {
                 realTimeStatistics.workers = workersRealTimeStatistics;
             }
+            res.write(JSON.stringify(realTimeStatistics));
+            return clientWorkSpace.tasks.list();
+        })
+        .then(tasksStatistics => {
+            if(tasksStatistics && tasksStatistics.length > 0){
+                realTimeStatistics.tasks = tasksStatistics;
+            }
+            // let buffer = Buffer.from(realTimeStatistics.taskQueues, "utf-8");
+            // console.log(Buffer.isBuffer(buffer));
             res.write(JSON.stringify(realTimeStatistics));
             res.end();
         })

@@ -8,8 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentWorker = document.getElementById("current");
     const getTasksBtn = document.getElementById("pending");
     const taskList = document.getElementById("tasks");
-    const getWorkerStatistics = document.getElementById("get-worker-statistics");
-    const getAllWorkerStatistics = document.getElementById("get-all-worker-statistics");
+    const getRealTimeStatistics = document.getElementById("get-real-time-statistics");
 
     const twilioResourceDetails = {
         device: undefined,
@@ -61,18 +60,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    getAllWorkerStatistics.addEventListener("click", () => {
-        fetch("/worker-statistics/all")
-        .then(res => res.json())
-        .then(data => {
-            //statistics of all workers
-            console.log(data);
+    getRealTimeStatistics.addEventListener("click", () => {
+        fetch(`/statistics/real-time`)
+        .then(res => {
+            console.log(res);
+            res.text();
         })
-    })
-
-    getWorkerStatistics.addEventListener("click", () => {
-        fetch(`/worker-statistics?workerId=${twilioResourceDetails.workerId}`)
-        .then(res => res.json())
         .then(data => {
             console.log(data);
         })
@@ -300,7 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!reservation.task.attributes.conference) {
                 setTimeout(() => {
                     const options = {
-                        "ConferenceStatusCallback": "https://f5f5-49-249-16-218.in.ngrok.io/allCallBacks",
+                        "ConferenceStatusCallback": "https://55c0-49-249-16-218.in.ngrok.io/allCallBacks",
                         "ConferenceStatusCallbackEvent": "start,end,join,leave",
                         "EndConferenceOnExit": "false",
                         "EndConferenceOnCustomerExit": "true"
@@ -313,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 reservation.call(
                     null,
-                    `https://f5f5-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
+                    `https://55c0-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
                     null,
                     "true",
                     null
