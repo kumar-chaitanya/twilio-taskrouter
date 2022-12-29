@@ -60,16 +60,44 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    getRealTimeStatistics.addEventListener("click", () => {
-        fetch(`/statistics/real-time`)
-        .then(res => {
-            console.log(res);
-            res.text();
+    getRealTimeStatistics.addEventListener("click", async () => {
+        let components = ["WORKSPACE", "WORKFLOWS", "TASKQUEUES", "WORKERS", "TASKS"];
+        let data = {};
+        fetch(`/statistics/real-time?component=${components[0]}`)
+        .then(async res => {
+            data = await res.json();
+            __console(data);
+            return fetch(`/statistics/real-time?component=${components[1]}`);
         })
-        .then(data => {
-            console.log(data);
+        .then(async res => {
+            data = await res.json();
+            __console(data);
+            return fetch(`/statistics/real-time?component=${components[2]}`);
+        })
+        .then(async res => {
+            data = await res.json();
+            __console(data);
+            return fetch(`/statistics/real-time?component=${components[3]}`);
+        })
+        .then(async res => {
+            data = await res.json();
+            __console(data);
+            return fetch(`/statistics/real-time?component=${components[4]}`);
+        })
+        .then(async res => {
+            data = await res.json();
+            __console(data);
+            return;
+        })
+        .catch(ex => {
+            __console(ex);
         })
     });
+
+    function __console(content){
+        console.log(content);
+        return;
+    }
 
     getTasksBtn.addEventListener("click", () => {
         fetch('/pending-tasks')
@@ -293,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!reservation.task.attributes.conference) {
                 setTimeout(() => {
                     const options = {
-                        "ConferenceStatusCallback": "https://55c0-49-249-16-218.in.ngrok.io/allCallBacks",
+                        "ConferenceStatusCallback": "https://64c2-49-249-16-218.in.ngrok.io/allCallBacks",
                         "ConferenceStatusCallbackEvent": "start,end,join,leave",
                         "EndConferenceOnExit": "false",
                         "EndConferenceOnCustomerExit": "true"
@@ -306,7 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 reservation.call(
                     null,
-                    `https://55c0-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
+                    `https://64c2-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
                     null,
                     "true",
                     null

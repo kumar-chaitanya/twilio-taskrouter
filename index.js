@@ -4,6 +4,7 @@ const fs = require("fs");
 const Cors = require("cors");
 const path = require('path');
 const twilio = require('twilio');
+const Stream = require('stream');
 // const response = new twilio.Response();
 // response.appendHeader('Access-Control-Allow-Origin', '*');
 // response.appendHeader('Access-Control-Allow-Methods', 'OPTIONS, POST, GET');
@@ -481,73 +482,224 @@ app.get('/worker-statistics/realtime-statistics', (req, res) => {
 /*
 statistics
 */
+// app.get("/statistics/real-time", (req, res) => {
+//     let realTimeStatistics = {
+//         workspace: {},
+//         workflows: [],
+//         taskQueues: [],
+//         workers: {},
+//         tasks: []
+//     };
+//     // const statisticsStream = new Stream.Duplex({ objectMode: true });
+//     // statisticsStream.push(realTimeStatistics);
+//     // statisticsStream.addListener("data", function(){
+//     //     console.log(res);
+//     //     statisticsStream.pipe(res);
+//     // })
+//     // statisticsStream.addListener("end", function(){
+//     //     res.end();
+//     // })
+//     let clientWorkSpace = twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID);
+//     clientWorkSpace
+//         .realTimeStatistics()
+//         .fetch()
+//         .then(workspaceRealTimeStatistics => {
+//             if (workspaceRealTimeStatistics) {
+//                 realTimeStatistics.workspace = workspaceRealTimeStatistics;
+//             }
+//             res.write(JSON.stringify(realTimeStatistics));
+//             return __getWorkflows();
+//         })
+//         .then(async workflows => {
+//             if (workflows && workflows.length > 0) {
+//                 for (let i = 0; i < workflows.length; i++) {
+//                     let realTimeWorkflowData = await clientWorkSpace
+//                         .workflows(workflows[i].sid).realTimeStatistics().fetch();
+//                     if (realTimeWorkflowData) {
+//                         realTimeStatistics.workflows.push(realTimeWorkflowData);
+//                     }
+//                 }
+//             }
+//             res.write(JSON.stringify(realTimeStatistics));
+//             return __getTaskQueues();
+//         })
+//         .then(async taskQueues => {
+//             if (taskQueues && taskQueues.length > 0) {
+//                 for (let i = 0; i < taskQueues.length; i++) {
+//                     let realTimeTaskQueueData = await clientWorkSpace
+//                         .taskQueues(taskQueues[i].sid).realTimeStatistics().fetch();
+//                     if (realTimeTaskQueueData) {
+//                         realTimeStatistics.taskQueues.push(realTimeTaskQueueData);
+//                     }
+//                 }
+//             }
+//             res.write(JSON.stringify(realTimeStatistics));
+//             return clientWorkSpace.workers().realTimeStatistics().fetch();
+//         })
+//         .then(workersRealTimeStatistics => {
+//             if (workersRealTimeStatistics) {
+//                 realTimeStatistics.workers = workersRealTimeStatistics;
+//             }
+//             res.write(JSON.stringify(realTimeStatistics));
+//             return clientWorkSpace.tasks.list();
+//         })
+//         .then(tasksStatistics => {
+//             if (tasksStatistics && tasksStatistics.length > 0) {
+//                 realTimeStatistics.tasks = tasksStatistics;
+//             }
+//             // let buffer = Buffer.from(realTimeStatistics.taskQueues, "utf-8");
+//             // console.log(Buffer.isBuffer(buffer));
+//             res.write(JSON.stringify(realTimeStatistics));
+//             res.end();
+//         })
+//         .catch(ex => {
+//             console.log(ex);
+//             res.status(500).json(ex);
+//             return;
+//         })
+// })
+
 app.get("/statistics/real-time", (req, res) => {
-    let realTimeStatistics = {
-        workspace: {},
-        workflows: [],
-        taskQueues: [],
-        workers: {},
-        tasks: []
-    };
-    let clientWorkSpace = twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID);
-    clientWorkSpace
-        .realTimeStatistics()
-        .fetch()
-        .then(workspaceRealTimeStatistics => {
-            if (workspaceRealTimeStatistics) {
-                realTimeStatistics.workspace = workspaceRealTimeStatistics;
-            }
-            res.write(JSON.stringify(realTimeStatistics));
-            return __getWorkflows();
-        })
-        .then(async workflows => {
-            if (workflows && workflows.length > 0) {
-                for (let i = 0; i < workflows.length; i++) {
-                    let realTimeWorkflowData = await clientWorkSpace
-                        .workflows(workflows[i].sid).realTimeStatistics().fetch();
-                    if (realTimeWorkflowData) {
-                        realTimeStatistics.workflows.push(realTimeWorkflowData);
-                    }
-                }
-            }
-            res.write(JSON.stringify(realTimeStatistics));
-            return __getTaskQueues();
-        })
-        .then(async taskQueues => {
-            if (taskQueues && taskQueues.length > 0) {
-                for (let i = 0; i < taskQueues.length; i++) {
-                    let realTimeTaskQueueData = await clientWorkSpace
-                        .taskQueues(taskQueues[i].sid).realTimeStatistics().fetch();
-                    if (realTimeTaskQueueData) {
-                        realTimeStatistics.taskQueues.push(realTimeTaskQueueData);
-                    }
-                }
-            }
-            res.write(JSON.stringify(realTimeStatistics));
-            return clientWorkSpace.workers().realTimeStatistics().fetch();
-        })
-        .then(workersRealTimeStatistics => {
-            if (workersRealTimeStatistics) {
-                realTimeStatistics.workers = workersRealTimeStatistics;
-            }
-            res.write(JSON.stringify(realTimeStatistics));
-            return clientWorkSpace.tasks.list();
-        })
-        .then(tasksStatistics => {
-            if(tasksStatistics && tasksStatistics.length > 0){
-                realTimeStatistics.tasks = tasksStatistics;
-            }
-            // let buffer = Buffer.from(realTimeStatistics.taskQueues, "utf-8");
-            // console.log(Buffer.isBuffer(buffer));
-            res.write(JSON.stringify(realTimeStatistics));
-            res.end();
-        })
-        .catch(ex => {
-            console.log(ex);
-            res.status(500).json(ex);
-            return;
-        })
+    try {
+        let realTimeStatistics = {
+            workspace: {},
+            workflows: [],
+            taskQueues: [],
+            workers: {},
+            tasks: []
+        };
+        console.log(req.query.component);
+        switch (req.query.component) {
+            case "WORKSPACE":
+                twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+                    .realTimeStatistics()
+                    .fetch()
+                    .then(workspaceRealTimeStatistics => {
+                        if (workspaceRealTimeStatistics) {
+                            realTimeStatistics.workspace = workspaceRealTimeStatistics;
+                        }
+                        res.status(200).send(realTimeStatistics);
+                    })
+                    .catch(ex => {
+                        throw (ex);
+                    })
+                break;
+
+            case "WORKFLOWS":
+                __getWorkflowsRealTimeStatistics()
+                    .then(workflowsRealTimeStatistics => {
+                        if (workflowsRealTimeStatistics && workflowsRealTimeStatistics.workflows && workflowsRealTimeStatistics.workflows.length > 0) {
+                            realTimeStatistics.workflows = workflowsRealTimeStatistics.workflows;
+                        }
+                        res.status(200).send(realTimeStatistics);
+                    })
+                    .catch(ex => {
+                        throw (ex);
+                    })
+                break;
+            case "TASKQUEUES":
+                __getTaskQueuesRealTimeStatistics()
+                    .then(taskQueuesRealTimeStatistics => {
+                        if (taskQueuesRealTimeStatistics && taskQueuesRealTimeStatistics.taskQueues && taskQueuesRealTimeStatistics.taskQueues.length > 0) {
+                            realTimeStatistics.taskQueues = taskQueuesRealTimeStatistics.taskQueues;
+                        }
+                        res.status(200).send(realTimeStatistics);
+                    })
+                    .catch(ex => {
+                        throw (ex);
+                    })
+                break;
+            case "WORKERS":
+                twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+                    .workers().realTimeStatistics().fetch()
+                    .then(workersRealTimeStatistics => {
+                        if (workersRealTimeStatistics) {
+                            realTimeStatistics.workers = workersRealTimeStatistics;
+                        }
+                        res.status(200).send(realTimeStatistics);
+                    })
+                    .catch(ex => {
+                        throw (ex);
+                    })
+                break;
+            case "TASKS":
+                twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+                    .tasks.list()
+                    .then(tasksStatistics => {
+                        if (tasksStatistics && tasksStatistics.length > 0) {
+                            realTimeStatistics.tasks = tasksStatistics;
+                        }
+                        res.status(200).send(realTimeStatistics);
+                    })
+                    .catch(ex => {
+                        throw (ex);
+                    })
+                break;
+
+            default:
+                res.status(400).send(`The argument value ${req.query.component} is not valid.`);
+                break;
+        }
+    } catch (ex) {
+        console.log(ex);
+        res.status(500).json(ex);
+        return;
+    }
 })
+
+function __getWorkflowsRealTimeStatistics() {
+    return new Promise(function (fulfill, reject) {
+        let __returnObject = {
+            workflows: []
+        };
+        __getWorkflows()
+            .then(async workflows => {
+                if (workflows && workflows.length > 0) {
+                    for (let i = 0; i < workflows.length; i++) {
+                        let realTimeWorkflowData = await twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+                            .workflows(workflows[i].sid).realTimeStatistics().fetch();
+                        if (realTimeWorkflowData) {
+                            __returnObject.workflows.push(realTimeWorkflowData);
+                        }
+                    }
+                }
+                fulfill(__returnObject);
+                return;
+            })
+            .catch(ex => {
+                console.log(ex);
+                reject(ex);
+                return;
+            })
+    });
+}
+
+function __getTaskQueuesRealTimeStatistics() {
+    return new Promise(function (fulfill, reject) {
+        let __returnObject = {
+            taskQueues: []
+        };
+        __getTaskQueues()
+            .then(async taskQueues => {
+                if (taskQueues && taskQueues.length > 0) {
+                    for (let i = 0; i < taskQueues.length; i++) {
+                        let realTimeWorkflowData = await twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
+                            .taskQueues(taskQueues[i].sid).realTimeStatistics().fetch();
+                        if (realTimeWorkflowData) {
+                            __returnObject.taskQueues.push(realTimeWorkflowData);
+                        }
+                    }
+                }
+                fulfill(__returnObject);
+                return;
+            })
+            .catch(ex => {
+                console.log(ex);
+                reject(ex);
+                return;
+            })
+    });
+}
 
 app.get("/statistics/cumulative", (req, res) => {
     let cumulativeStatistics = {
