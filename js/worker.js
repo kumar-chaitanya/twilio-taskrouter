@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const getTasksBtn = document.getElementById("pending");
     const taskList = document.getElementById("tasks");
     const getRealTimeStatistics = document.getElementById("get-real-time-statistics");
+    const number = document.getElementById("number");
+    const outgoingBtn = document.getElementById("outgoing-call");
 
     const twilioResourceDetails = {
         device: undefined,
@@ -64,37 +66,37 @@ document.addEventListener("DOMContentLoaded", () => {
         let components = ["WORKSPACE", "WORKFLOWS", "TASKQUEUES", "WORKERS", "TASKS"];
         let data = {};
         fetch(`/statistics/real-time?component=${components[0]}`)
-        .then(async res => {
-            data = await res.json();
-            __console(data);
-            return fetch(`/statistics/real-time?component=${components[1]}`);
-        })
-        .then(async res => {
-            data = await res.json();
-            __console(data);
-            return fetch(`/statistics/real-time?component=${components[2]}`);
-        })
-        .then(async res => {
-            data = await res.json();
-            __console(data);
-            return fetch(`/statistics/real-time?component=${components[3]}`);
-        })
-        .then(async res => {
-            data = await res.json();
-            __console(data);
-            return fetch(`/statistics/real-time?component=${components[4]}`);
-        })
-        .then(async res => {
-            data = await res.json();
-            __console(data);
-            return;
-        })
-        .catch(ex => {
-            __console(ex);
-        })
+            .then(async res => {
+                data = await res.json();
+                __console(data);
+                return fetch(`/statistics/real-time?component=${components[1]}`);
+            })
+            .then(async res => {
+                data = await res.json();
+                __console(data);
+                return fetch(`/statistics/real-time?component=${components[2]}`);
+            })
+            .then(async res => {
+                data = await res.json();
+                __console(data);
+                return fetch(`/statistics/real-time?component=${components[3]}`);
+            })
+            .then(async res => {
+                data = await res.json();
+                __console(data);
+                return fetch(`/statistics/real-time?component=${components[4]}`);
+            })
+            .then(async res => {
+                data = await res.json();
+                __console(data);
+                return;
+            })
+            .catch(ex => {
+                __console(ex);
+            })
     });
 
-    function __console(content){
+    function __console(content) {
         console.log(content);
         return;
     }
@@ -213,6 +215,45 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    outgoingBtn.addEventListener("click", async () => {
+        if (number && number.value && twilioResourceDetails.device) {
+            const params = {
+                phoneNumber: number.value,
+                outgoing: true
+            };
+
+            const call = await twilioResourceDetails.device.connect({
+                params: params
+            });
+
+            let currentCall = document.getElementById("in-call");
+            currentCall.innerHTML = "";
+
+            let hangCallBtn = document.createElement("button");
+            hangCallBtn.classList.add("btn", "btn-sm", "ms-3", "btn-danger");
+            hangCallBtn.innerText = "Hang Up Call";
+            hangCallBtn.addEventListener("click", function () {
+                twilioResourceDetails.device.disconnectAll();
+            });
+
+
+
+            let textNode = document.createTextNode(`In call with ${number.value}`);
+
+            currentCall.appendChild(textNode);
+            currentCall.appendChild(hangCallBtn);
+
+            call.on("disconnect", (data) => {
+                currentCall.innerHTML = "";
+                console.log('Disconnected');
+                // console.log(data);
+            });
+
+
+            console.log(call);
+        }
+    });
+
     onlineBtn.addEventListener("click", () => {
         if (twilioResourceDetails.worker && twilioResourceDetails.workerId) {
             fetch("/worker-status", {
@@ -250,12 +291,6 @@ document.addEventListener("DOMContentLoaded", () => {
             conn.accept(function () {
                 console.log('Call connected');
             });
-
-            // // Set a callback on the answer button and enable it
-            // answerButton.click(function () {
-            //     conn.accept();
-            // });
-            // answerButton.prop("disabled", false);
         });
     };
 
@@ -321,7 +356,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!reservation.task.attributes.conference) {
                 setTimeout(() => {
                     const options = {
-                        "ConferenceStatusCallback": "https://64c2-49-249-16-218.in.ngrok.io/allCallBacks",
+                        "ConferenceStatusCallback": "https://ba6c-49-249-16-218.in.ngrok.io/allCallBacks",
                         "ConferenceStatusCallbackEvent": "start,end,join,leave",
                         "EndConferenceOnExit": "false",
                         "EndConferenceOnCustomerExit": "true"
@@ -334,7 +369,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 reservation.call(
                     null,
-                    `https://64c2-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
+                    `https://ba6c-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
                     null,
                     "true",
                     null
