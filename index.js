@@ -43,21 +43,29 @@ app.use(BodyParser.urlencoded({
 
 app.use(router);
 router.post('/incoming/', function (req, res) {
-    // console.log(JSON.stringify(req.body));
-
-    fs.appendFileSync('log.txt', `\n STARTING CALL LOG FOR ${req.body.CallSid} \n`);
-    fs.appendFileSync('log.txt', JSON.stringify({ "callData": req.body }));
-    fs.appendFileSync('log.txt', "\n");
-    var twimlResponse = new VoiceResponse();
-    var gather = twimlResponse.gather({
-        numDigits: 1,
-        action: '/enqueue/',
-        method: 'POST'
-    });
-    gather.say('For Support, press one. For Helpdesk, press any other key.');
-    res.type('text/xml');
-    // console.log(twimlResponse.toString());
-    res.send(twimlResponse.toString());
+    if (req.body.outgoing && req.body.phoneNumber) {
+        let phoneNumber = req.body.phoneNumber;
+        let callerId = process.env.TWILIO_NUMBER;
+        let twiml = new VoiceResponse();
+    
+        let dial = twiml.dial({ callerId: callerId });
+        dial.number({}, phoneNumber);
+        res.send(twiml.toString());
+    } else {
+        fs.appendFileSync('log.txt', `\n STARTING CALL LOG FOR ${req.body.CallSid} \n`);
+        fs.appendFileSync('log.txt', JSON.stringify({ "callData": req.body }));
+        fs.appendFileSync('log.txt', "\n");
+        var twimlResponse = new VoiceResponse();
+        var gather = twimlResponse.gather({
+            numDigits: 1,
+            action: '/enqueue/',
+            method: 'POST'
+        });
+        gather.say('For Support, press one. For Helpdesk, press any other key.');
+        res.type('text/xml');
+        // console.log(twimlResponse.toString());
+        res.send(twimlResponse.toString());
+    }
 });
 
 // POST /call/enqueue
@@ -176,6 +184,7 @@ app.post('/token', (req, res) => {
     accessToken.identity = clientName;
 
     const grant = new VoiceGrant({
+        outgoingApplicationSid: process.env.TWILIO_APP_SID,
         incomingAllow: true
     });
 
