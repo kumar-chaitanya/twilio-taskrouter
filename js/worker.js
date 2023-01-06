@@ -1,4 +1,20 @@
 document.addEventListener("DOMContentLoaded", () => {
+    toastr.options = {
+        'closeButton': true,
+        'debug': false,
+        'newestOnTop': false,
+        'progressBar': false,
+        'positionClass': 'toast-top-right',
+        'preventDuplicates': false,
+        'showDuration': '1000',
+        'hideDuration': '1000',
+        'timeOut': '5000',
+        'extendedTimeOut': '1000',
+        'showEasing': 'swing',
+        'hideEasing': 'linear',
+        'showMethod': 'fadeIn',
+        'hideMethod': 'fadeOut',
+    };
     const createBtn = document.getElementById("create");
     const onlineBtn = document.getElementById("online");
     const offlineBtn = document.getElementById("offline");
@@ -12,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const number = document.getElementById("number");
     const outgoingBtn = document.getElementById("outgoing-call");
 
+    // toastr.info(`Hi`);
     const twilioResourceDetails = {
         device: undefined,
         worker: undefined,
@@ -106,6 +123,11 @@ document.addEventListener("DOMContentLoaded", () => {
             .then(res => res.json())
             .then(data => {
                 taskList.innerHTML = "";
+                if (data && !data.length) {
+                    toastr.info("No Task Found");
+                } else {
+                    toastr.info("Task(s) Found");
+                }
                 data.forEach(task => {
                     let li = document.createElement('li');
                     li.classList.add("list-group-item");
@@ -133,7 +155,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     twilioResourceDetails.clientName = workerName.value;
 
                     currentWorker.innerText = `Current Worker: ${twilioResourceDetails.clientName}`;
+                    toastr.success(`Worker ${workerName.value} connected`);
                     workerName.value = "";
+
                 })
                 .catch(ex => console.log(ex));
         }
@@ -177,6 +201,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         const worker = new Twilio.TaskRouter.Worker(data.token);
                         twilioResourceDetails.worker = worker;
                         registerWorkerCallbacks(worker);
+                        console.log(data);
+                        toastr.success("Token found");
                     }
                 })
                 .catch((ex) => console.log(ex));
@@ -292,15 +318,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.log('Call connected');
             });
         });
-    };
+    }
 
     function registerWorkerCallbacks(worker) {
         worker.on("ready", (worker) => {
             console.log(worker);
+
+            console.log(worker.activityName);
+
+            statusHeader.innerText = `Current Status: ${worker.activityName}`;
         });
 
         worker.on("activity.update", (worker) => {
-            console.log(worker.activityName)
+            console.log(worker.activityName);
             statusHeader.innerText = `Current Status: ${worker.activityName}`;
         });
 
@@ -356,7 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!reservation.task.attributes.conference) {
                 setTimeout(() => {
                     const options = {
-                        "ConferenceStatusCallback": "https://ba6c-49-249-16-218.in.ngrok.io/allCallBacks",
+                        "ConferenceStatusCallback": "http://ec2-44-201-130-251.compute-1.amazonaws.com/allCallBacks",
                         "ConferenceStatusCallbackEvent": "start,end,join,leave",
                         "EndConferenceOnExit": "false",
                         "EndConferenceOnCustomerExit": "true"
@@ -369,7 +399,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 reservation.call(
                     null,
-                    `https://ba6c-49-249-16-218.in.ngrok.io/call-answer/${reservation.task.attributes.conference.room_name}`,
+                    `http://ec2-44-201-130-251.compute-1.amazonaws.com/call-answer/${reservation.task.attributes.conference.room_name}`,
                     null,
                     "true",
                     null
@@ -382,5 +412,5 @@ document.addEventListener("DOMContentLoaded", () => {
             currentCall.innerHTML = "";
             worker.completeTask(reservation.task.sid);
         });
-    };
+    }
 });

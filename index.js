@@ -47,7 +47,7 @@ router.post('/incoming/', function (req, res) {
         let phoneNumber = req.body.phoneNumber;
         let callerId = process.env.TWILIO_NUMBER;
         let twiml = new VoiceResponse();
-    
+
         let dial = twiml.dial({ callerId: callerId });
         dial.number({}, phoneNumber);
         res.send(twiml.toString());
@@ -213,13 +213,13 @@ app.get('/worker', (req, res) => {
         })
         .catch(ex => {
             res.status(500).end();
-        })
+        });
 });
 
 app.post('/worker', (req, res) => {
     let attributes = {
         "contact_uri": `client:${req.body.workerName}`
-    }
+    };
 
     twilioClient.taskrouter.v1.workspaces(process.env.TWILIO_WORKSPACE_ID)
         .workers
@@ -234,7 +234,7 @@ app.post('/worker', (req, res) => {
         })
         .catch((ex) => {
             res.status(500).json(ex);
-        })
+        });
 });
 
 app.post("/worker-token", (req, res) => {
@@ -294,12 +294,27 @@ app.get('/js/:filename', (req, res) => {
     res.sendFile(path.join(__dirname, `/js/${req.params.filename}`));
 });
 
+app.post("/callStatusUpdate", (req, res) => {
+    res.status(200).send("");
+});
+
 /* Explaination here: https://www.twilio.com/docs/taskrouter/contact-center-blueprint/call-control-concepts#putting-a-call-on-hold */
 app.post('/hold-status', (req, res) => {
+
     twilioClient.conferences(req.body.conferenceId)
         .participants(req.body.callerId)
-        .update({ hold: req.body.hold });
-    res.status(200).send('');
+        .update({ hold: req.body.hold })
+        .then(function () {
+            var twimlResponse = new VoiceResponse();
+            twimlResponse.say({
+                voice: 'woman',
+                language: 'fr-FR'
+            }, 'Chapeau!');
+            // say.say('Please wait.');
+            res.type('text/xml');
+            console.log(twimlResponse.toString());
+            res.status(200).send(twimlResponse.toString());
+        });
 });
 
 /* Explaination here: https://github.com/vernig/twilio-taskrouter-agent-frontend */
@@ -782,4 +797,4 @@ function buildWorkspacePolicy(options) {
         method: options.method || 'GET',
         allow: true
     });
-};
+}
