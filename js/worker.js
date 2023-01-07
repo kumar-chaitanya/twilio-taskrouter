@@ -157,6 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     currentWorker.innerText = `Current Worker: ${twilioResourceDetails.clientName}`;
                     toastr.success(`Worker ${workerName.value} connected`);
                     workerName.value = "";
+                    getWorkerToken();
 
                 })
                 .catch(ex => console.log(ex));
@@ -187,6 +188,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     workerTokenBtn.addEventListener("click", () => {
+        getWorkerToken();
+    });
+
+    function getWorkerToken(){
         if (twilioResourceDetails && twilioResourceDetails.workerId && twilioResourceDetails.clientName) {
             fetch("/worker-token", {
                 method: "POST",
@@ -203,6 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         registerWorkerCallbacks(worker);
                         console.log(data);
                         toastr.success("Token found");
+                        goOffline();
                     }
                 })
                 .catch((ex) => console.log(ex));
@@ -239,7 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 })
         }
-    });
+    }
 
     outgoingBtn.addEventListener("click", async () => {
         if (number && number.value && twilioResourceDetails.device) {
@@ -294,6 +300,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     offlineBtn.addEventListener("click", () => {
+        goOffline();
+    });
+
+    function goOffline(){
         if (twilioResourceDetails.worker && twilioResourceDetails.workerId) {
             fetch("/worker-status", {
                 method: "POST",
@@ -304,7 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
             })
                 .catch((ex) => console.log(ex));
         }
-    });
+    }
 
     function registerDeviceCallbacks(device) {
         device.on('registered', device => {
