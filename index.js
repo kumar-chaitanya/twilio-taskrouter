@@ -42,6 +42,9 @@ app.use(BodyParser.urlencoded({
 }));
 
 app.use(router);
+router.post("/testUrl", function (req, res) {
+    res.json((req.query))
+})
 router.post('/incoming/', function (req, res) {
     if (req.body.outgoing && req.body.phoneNumber) {
         let phoneNumber = req.body.phoneNumber;

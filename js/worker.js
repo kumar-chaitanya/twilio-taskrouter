@@ -128,10 +128,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     toastr.info("Task(s) Found");
                 }
+                console.array(data);
                 data.forEach(task => {
                     let li = document.createElement('li');
                     li.classList.add("list-group-item");
-                    let btn = document.createElement('button');
+                    let btn = document.createElement('button');                    
                     btn.classList.add("btn", "btn-sm", "btn-success", "ms-3");
                     btn.innerText = 'Reserve this call';
                     btn.addEventListener("click", pullCall);
@@ -191,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
         getWorkerToken();
     });
 
-    function getWorkerToken(){
+    function getWorkerToken() {
         if (twilioResourceDetails && twilioResourceDetails.workerId && twilioResourceDetails.clientName) {
             fetch("/worker-token", {
                 method: "POST",
@@ -303,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
         goOffline();
     });
 
-    function goOffline(){
+    function goOffline() {
         if (twilioResourceDetails.worker && twilioResourceDetails.workerId) {
             fetch("/worker-status", {
                 method: "POST",
